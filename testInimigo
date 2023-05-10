@@ -1,0 +1,116 @@
+using UnityEngine;
+
+public class TestInimigo : MonoBehaviour
+{
+    public float speed;
+    public float totalLife;
+    public int danoEnemy = 15;
+    public GameObject player;
+    public Transform enemyPos;
+
+    public float life;
+    private bool isAlive;
+    public Player playerL;
+    private Knockback knock;
+
+    public bool enemyBase;
+    public bool enemyFlash;
+    public bool enemyTank;
+    public bool enemyBruiser;
+
+    //test
+    private Rigidbody2D rb;
+    //
+    protected virtual void Start()
+    {
+        //test
+        rb = GetComponent<Rigidbody2D>();
+        //
+        playerL = FindObjectOfType<Player>();
+        knock = GetComponent<Knockback>();
+        isAlive = true;
+        life = totalLife;
+    }
+
+    protected virtual void FixedUpdate()
+    {
+        if (knock.kBCount < 0)
+        {
+            EnemyMove();
+        }
+        else
+        {
+            knock.KnockLogicc();
+        }       
+        Death();
+    }
+
+    void EnemyMove()
+    {
+       rb.velocity = Vector3.zero;
+       enemyPos.position = Vector2.MoveTowards(enemyPos.position, player.transform.position, speed * Time.fixedDeltaTime);
+    }
+
+    void Death()
+    {
+        if(life <= 0)
+        {
+            isAlive = false;
+        }
+        if(isAlive == false)
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void TakeDamage()
+    {
+        if(enemyBase == true) life -= playerL.dano;
+        if (enemyFlash == true && playerL.municaoAzul == true) life -= playerL.dano;
+        if (enemyTank == true && playerL.municaoVerde == true) life -= playerL.dano;
+        if (enemyBruiser == true && playerL.municaoVermelho == true) life -= playerL.dano;
+    }
+
+    public void TakeDamagePlayer()
+    {
+        playerL.vida -= danoEnemy;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Tiro"))
+        {
+            TakeDamage();
+        }
+
+        if (collision.CompareTag("Espada"))
+        {
+            knock.Knockingg(collision);
+            TakeDamage();
+        }
+
+        if (collision.CompareTag("Player"))
+        {
+            TakeDamagePlayer();
+        }
+    }
+
+    /*private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Tiro"))
+        {
+            TakeDamage();
+        }
+
+        if (collision.gameObject.tag == ("Espada"))
+        {
+            knock.Knockingg(collision);
+            TakeDamage();
+        }
+
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            TakeDamagePlayer();
+        }
+    }*/
+}
