@@ -1,0 +1,52 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class SpecialEnemys : TestInimigo
+{
+    protected override void Start()
+    {
+        base.Start();
+        TypeOfEnemy();
+    }
+
+    protected override void FixedUpdate()
+    {
+        base.FixedUpdate();
+    }
+
+    void TypeOfEnemy()
+    {
+        if(gameObject.tag == "Flash")
+        {
+            EnemyFlash();
+
+            enemyFlash = true;
+        }
+        if(gameObject.tag == "Tank")
+        {
+            EnemyTank();
+
+            enemyTank = true;
+        }
+        if (gameObject.tag == "Bruiser")
+        {
+            EnemyBruiser();
+
+            enemyBruiser = true;
+        }
+    }
+
+    void EnemyFlash()
+    {
+        speed *= 2;
+    }
+    void EnemyTank()
+    {
+        totalLife *= 2;
+    }
+    void EnemyBruiser()
+    {
+        danoEnemy *= 2;
+    }
+}
