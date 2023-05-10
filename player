@@ -1,0 +1,244 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
+using UnityEngine.Video;
+using static UnityEditor.PlayerSettings;
+
+public class Player : MonoBehaviour
+{
+    private Rigidbody2D rb;
+    private Knockback knock;
+    public Vector2 direcaoArma;
+
+    public float velocidade;
+
+    public bool canMove;
+    public float inputHori;
+    public float inputVert;
+
+    public bool isRight;
+
+    public int maxVida;
+    public int vida;
+
+    public bool morte;
+
+    public bool mudarArma;
+    public bool usarDualPistol;
+    public GameObject bullet;
+    public GameObject spawnBullet;
+    public bool usarEspada;
+
+    public bool attack;
+    public bool canAttack;
+    public float cooldown;
+    public int dano;
+
+    public bool municaoAzul;
+    public GameObject obj_municaoAzul;
+    public bool municaoVermelho;
+    public GameObject obj_municaoVermelho;
+    public bool municaoVerde;
+    public GameObject obj_municaoVerde;
+    public bool municaoNormal;
+
+    public Vector3 direcao;
+
+    //test
+    public Transform dualPistol;
+    public Transform espada;
+
+    public GameObject areaEspada;
+    ///
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        knock = GetComponent<Knockback>();
+        rb = GetComponent<Rigidbody2D>();
+        maxVida = 70;
+        vida = maxVida;
+        canMove = true;
+        direcao = new Vector2(1f, 0f);
+        canAttack = true;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        InputLogic();
+        //Flip();
+        CombateLogic();
+    }
+
+    private void FixedUpdate()
+    {
+        if(knock.kBCount < 0)
+        {
+            MoveLogic();
+        }
+        else
+        {
+            knock.KnockLogic();
+        }
+    }
+
+    void InputLogic()
+    {   
+        inputHori = Input.GetAxisRaw("Horizontal");
+        inputVert = Input.GetAxisRaw("Vertical");
+
+        DashLogic();
+
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            mudarArma = !mudarArma;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Mouse0) && canAttack == true)
+        {
+            canAttack = false;
+            attack = true;
+        }
+        else attack = false;
+    }
+
+    void MoveLogic()
+    {
+        if (canMove == true)
+        {
+            Vector2 move = new Vector2(inputHori, inputVert);
+            move = move.normalized;
+            rb.velocity = move * velocidade;
+            if (rb.velocity != Vector2.zero) direcao = move;
+        }
+    }
+    void DashLogic()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            StartCoroutine(DashCooldown());
+        }
+    }
+
+    void Flip()
+    {
+        if(isRight && inputHori > 0)
+        {
+            FlipLogic();
+        }
+
+        if (!isRight && inputHori < 0)
+        {
+            FlipLogic();
+        }
+    }
+
+    void FlipLogic()
+    {
+        isRight = !isRight;
+        transform.Rotate(0f, -180f, 0f);
+    }
+
+    void CombateLogic()
+    {
+        Vector3 mousePos = Input.mousePosition;
+
+        mousePos = Camera.main.ScreenToWorldPoint(mousePos);
+        direcaoArma = new Vector2(mousePos.x - dualPistol.position.x, mousePos.y - dualPistol.position.y);
+        dualPistol.right = direcaoArma;
+
+        if (mudarArma == true)
+        {
+            espada.gameObject.SetActive(true);
+            espada.transform.position = transform.position + direcao;
+            dualPistol.gameObject.SetActive(false);
+            if (attack == true)
+            {
+                Debug.Log("Espada");
+                areaEspada.SetActive(true);
+                areaEspada.transform.position = transform.position + direcao;
+                dano = 5;
+                StartCoroutine(DashAttackCooldown());
+                cooldown = 0.3f;
+                StartCoroutine(AttackCooldown());
+            }
+            else
+            {
+                
+            }
+        }
+
+        if (mudarArma == false)
+        {
+            dualPistol.gameObject.SetActive(true);
+            //dualPistol.transform.position = transform.position + direcao;
+            espada.gameObject.SetActive(false);
+            if (attack == true)
+            {
+                dano = 7;
+                Instantiate(bullet, spawnBullet.transform.position, this.gameObject.transform.rotation);
+                cooldown = 0.6f;
+                StartCoroutine(AttackCooldown());
+            }
+        }
+
+        if (vida <= 0)
+        {
+            morte = true;
+
+            Destroy(gameObject);
+        }
+    }
+
+    
+
+    IEnumerator AttackCooldown()
+    {
+        yield return new WaitForSeconds(cooldown);
+        areaEspada.SetActive(false);
+        canAttack = true;
+    }
+    IEnumerator DashCooldown()
+    {
+        canMove = false;
+        rb.velocity = direcao * 8;
+        yield return new WaitForSeconds(0.5f);
+        canMove = true;
+    }
+
+    IEnumerator DashAttackCooldown()
+    {
+        canMove = false;
+        rb.velocity = direcao * 4;
+        yield return new WaitForSeconds(0.3f);
+        canMove = true;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+        {
+            knock.Knocking(collision);
+        }
+
+        if (collision.gameObject.layer == LayerMask.NameToLayer("MunicaoAzul"))
+        {
+            municaoAzul = true;
+            Destroy(obj_municaoAzul);
+        }
+
+        if (collision.gameObject.layer == LayerMask.NameToLayer("MunicaoVermelho"))
+        {
+            municaoVermelho = true;
+            Destroy(obj_municaoVermelho);
+        }
+
+        if (collision.gameObject.layer == LayerMask.NameToLayer("MunicaoVerde"))
+        {
+            municaoVerde = true;
+            Destroy(obj_municaoVerde);
+        }
+    }
+}
